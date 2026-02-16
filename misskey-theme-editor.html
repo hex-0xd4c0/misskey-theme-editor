@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misskey Theme Editor 主题编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.1s ease, border-color 0.1s ease;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            line-height: 1.5;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .theme-showcase {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            background-color: var(--pageHeaderBg);
+            color: var(--pageHeaderFg);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--accent);
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent), var(--buttonGradateB));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .theme-toggle {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--panel);
+            padding: 0.3rem;
+            border-radius: 40px;
+            border: 1px solid var(--divider);
+        }
+
+        .theme-toggle button {
+            background: transparent;
+            border: none;
+            padding: 0.4rem 1.2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--fg);
+            font-size: 0.9rem;
+            transition: 0.1s;
+        }
+
+        .theme-toggle button.active {
+            background-color: var(--accent);
+            color: var(--fgOnAccent);
+        }
+
+        .chip {
+            background-color: var(--panel);
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: var(--fgHighlighted);
+            border: solid 1px var(--divider);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1.3fr 2fr;
+            gap: 1.5rem;
+        }
+
+        .variables-panel {
+            background-color: var(--panel);
+            border-radius: 20px;
+            padding: 1.25rem;
+            box-shadow: 0 8px 20px var(--shadow);
+            border: solid 1px var(--divider);
+            backdrop-filter: blur(2px);
+            height: fit-content;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .variables-panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--divider);
+            padding-bottom: 0.6rem;
+            position: sticky;
+            top: 0;
+            background-color: var(--panel);
+            z-index: 2;
+        }
+
+        .color-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            background-color: var(--panelHighlight);
+            padding: 0.4rem 0.6rem;
+            border-radius: 30px;
+            border: 1px solid var(--divider);
+            flex-wrap: wrap;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 30px;
+            border: 2px solid var(--fgOnWhite);
+            box-shadow: 0 2px 5px var(--shadow);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .color-info {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .color-name {
+            color: var(--hashtag);
+            font-weight: 600;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .color-desc {
+            color: var(--fg);
+            opacity: 0.7;
+            font-size: 0.7rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .color-value {
+            color: var(--codeString);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            word-break: break-word;
+            background: var(--bg);
+            padding: 0.1rem 0.3rem;
+            border-radius: 12px;
+        }
+
+        .color-picker {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--divider);
+            border-radius: 30px;
+            cursor: pointer;
+            flex-shrink: 0;
+            background: transparent;
+        }
+        .color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        .color-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 30px;
+        }
+
+        .ui-showcase { display: flex; flex-direction: column; gap: 1.5rem; }
+        .window-card { background-color: var(--panel); border-radius: 24px; padding: 1.5rem; border: 1px solid var(--divider); box-shadow: 0 12px 28px var(--shadow); }
+        .window-header { background-color: var(--windowHeader); margin: -1.5rem -1.5rem 1rem -1.5rem; padding: 1rem 1.5rem; border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom: 1px solid var(--divider); color: var(--fg); font-weight: 500; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; }
+        .window-header .indicator { width: 12px; height: 12px; background-color: var(--indicator); border-radius: 20px; }
+        .nav-row { background-color: var(--navBg); border-radius: 40px; padding: 0.3rem; display: inline-flex; border: 1px solid var(--divider); margin-bottom: 1.2rem; }
+        .nav-item { padding: 0.5rem 1.2rem; border-radius: 30px; color: var(--navFg); font-weight: 500; font-size: 0.9rem; cursor: default; }
+        .nav-item.active { background-color: var(--navActive); color: var(--fgOnAccent); box-shadow: 0 2px 8px var(--shadow); }
+        .nav-item .indicator { display: inline-block; width: 8px; height: 8px; background-color: var(--navIndicator); border-radius: 10px; margin-left: 6px; }
+        .note { background-color: var(--messageBg); border-radius: 20px; padding: 1.2rem; border: 1px solid var(--divider); margin-bottom: 1.2rem; }
+        .note-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
+        .note-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(145deg, var(--accent), var(--renote)); }
+        .note-name { font-weight: 600; color: var(--fgHighlighted); }
+        .note-username { color: var(--fg); opacity: 0.6; font-size: 0.8rem; }
+        .note-content { color: var(--fg); padding-left: 0.5rem; border-left: 3px solid var(--accent); }
+        .mention { color: var(--mention); background-color: var(--accentedBg); padding: 0.1rem 0.3rem; border-radius: 8px; }
+        .hashtag { color: var(--hashtag); }
+        .renote-indicator { color: var(--renote); font-size: 0.8rem; margin-top: 0.5rem; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 12px; margin: 1.2rem 0; }
+        .btn { padding: 0.5rem 1.4rem; border-radius: 40px; border: none; font-weight: 600; font-size: 0.9rem; cursor: default; background-color: var(--buttonBg); color: var(--fg); border: 1px solid var(--inputBorder); }
+        .btn-primary { background: linear-gradient(145deg, var(--buttonGradateA), var(--buttonGradateB)); color: var(--fgOnAccent); border: none; }
+        .btn-hover { background-color: var(--buttonHoverBg); }
+        .switch-group { display: flex; gap: 24px; align-items: center; margin: 1rem 0; }
+        .switch { width: 48px; height: 24px; background-color: var(--switchOffBg); border-radius: 30px; position: relative; border: 1px solid var(--divider); }
+        .switch.on { background-color: var(--switchOnBg); }
+        .switch::after { content: ""; display: block; width: 20px; height: 20px; background-color: var(--switchOffFg); border-radius: 50%; position: relative; top: 1px; left: 2px; }
+        .switch.on::after { background-color: var(--switchOnFg); left: 24px; }
+        .input-field { background-color: var(--bg); border: 1px solid var(--inputBorder); border-radius: 30px; padding: 0.6rem 1.2rem; color: var(--fg); width: 100%; margin: 0.5rem 0; }
+        .input-field:focus { border-color: var(--inputBorderHover); outline: none; }
+        .badge { background-color: var(--badge); color: var(--fgOnAccent); padding: 0.15rem 0.6rem; border-radius: 40px; font-size: 0.7rem; font-weight: 600; }
+        .info-box { background-color: var(--infoBg); color: var(--infoFg); padding: 0.8rem 1rem; border-radius: 16px; border-left: 6px solid var(--infoWarnBg); }
+        .divider-example { height: 2px; background-color: var(--divider); margin: 1rem 0; }
+        .scrollable-area { max-height: 120px; overflow-y: auto; background-color: var(--bg); padding: 0.8rem; border-radius: 16px; border: 1px solid var(--divider); }
+        .scrollable-area::-webkit-scrollbar { width: 8px; }
+        .scrollable-area::-webkit-scrollbar-thumb { background-color: var(--scrollbarHandle); border-radius: 10px; }
+        .scrollable-area::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbarHandleHover); }
+
+        .export-area {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .export-buttons {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: flex-end;
+        }
+        .export-btn {
+            background-color: var(--accent);
+            color: var(--fgOnAccent);
+            border: none;
+            padding: 0.6rem 1.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            border: 1px solid var(--divider);
+        }
+        .export-btn:hover {
+            background-color: var(--buttonGradateB);
+        }
+        .copy-btn {
+            background-color: var(--panel);
+            color: var(--fg);
+            border: 1px solid var(--divider);
+            padding: 0.6rem 1.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .copy-btn:hover {
+            background-color: var(--panelHighlight);
+        }
+        .export-code {
+            width: 100%;
+            background-color: var(--panel);
+            border: 1px solid var(--divider);
+            border-radius: 16px;
+            padding: 1rem;
+            color: var(--codeString);
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        a { color: var(--link); }
+    </style>
+</head>
+<body>
+    <div class="theme-showcase" id="app"></div>
+
+    <script>
+        (function() {
+            // ---------- 深色主题 (原始) ----------
+            const DARK_THEME = {
+                accent: '#f29924',
+                accentedBg: ':alpha<0.15<@accent',
+                love: '#dd2e44',
+                focus: ':alpha<0.3<@accent',
+                bg: '#191919',
+                fg: '#dadada',
+                fgHighlighted: ':lighten<3<@fg',
+                fgOnAccent: '#fff',
+                fgOnWhite: '#333',
+                divider: 'rgba(255, 255, 255, 0.1)',
+                indicator: '@accent',
+                panel: ':lighten<3<@bg',
+                panelHighlight: ':lighten<3<@panel',
+                panelHeaderBg: ':lighten<3<@panel',
+                panelHeaderFg: '@fg',
+                panelBorder: '" solid 1px var(--MI_THEME-divider)',
+                windowHeader: ':alpha<0.85<@panel',
+                popup: ':lighten<3<@panel',
+                shadow: 'rgba(0, 0, 0, 0.3)',
+                header: ':alpha<0.7<@panel',
+                navBg: '@panel',
+                navFg: '@fg',
+                navActive: '@accent',
+                navIndicator: '@indicator',
+                pageHeaderBg: '@bg',
+                pageHeaderFg: '@fg',
+                link: '#44a4c1',
+                hashtag: '#ff9156',
+                mention: '@accent',
+                mentionMe: '@mention',
+                renote: '#229e82',
+                modalBg: 'rgba(0, 0, 0, 0.5)',
+                scrollbarHandle: 'rgba(255, 255, 255, 0.2)',
+                scrollbarHandleHover: 'rgba(255, 255, 255, 0.4)',
+                dateLabelFg: '@fg',
+                infoBg: '#253142',
+                infoFg: '#fff',
+                infoWarnBg: '#42321c',
+                infoWarnFg: '#ffbd3e',
+                folderHeaderBg: 'rgba(255, 255, 255, 0.05)',
+                folderHeaderHoverBg: 'rgba(255, 255, 255, 0.1)',
+                buttonBg: ':lighten<5<@panel',
+                buttonHoverBg: ':lighten<10<@panel',
+                buttonGradateA: '@accent',
+                buttonGradateB: ':hue<20<@accent',
+                switchBg: 'rgba(255, 255, 255, 0.15)',
+                switchOffBg: 'rgba(255, 255, 255, 0.1)',
+                switchOffFg: ':alpha<0.8<@fg',
+                switchOnBg: '@accentedBg',
+                switchOnFg: '@accent',
+                inputBorder: 'rgba(255, 255, 255, 0.1)',
+                inputBorderHover: 'rgba(255, 255, 255, 0.2)',
+                badge: '#31b1ce',
+                messageBg: '@bg',
+                success: '#86b300',
+                error: '#ec4137',
+                warn: '#ecb637',
+                codeString: '#ffb675',
+                codeNumber: '#cfff9e',
+                codeBoolean: '#c59eff',
+                deckBg: '#000',
+                htmlThemeColor: '@bg',
+            };
+
+            // ---------- 浅色主题 ----------
+            const LIGHT_THEME = {
+                accent: '#f29924',
+                accentedBg: ':alpha<0.15<@accent',
+                love: '#dd2e44',
+                focus: ':alpha<0.3<@accent',
+                bg: '#f5f5f5',
+                fg: '#1a1a1a',
+                fgHighlighted: ':lighten<3<@fg',
+                fgOnAccent: '#fff',
+                fgOnWhite: '#333',
+                divider: 'rgba(0, 0, 0, 0.1)',
+                indicator: '@accent',
+                panel: ':lighten<3<@bg',
+                panelHighlight: ':lighten<3<@panel',
+                panelHeaderBg: ':lighten<3<@panel',
+                panelHeaderFg: '@fg',
+                panelBorder: '" solid 1px var(--MI_THEME-divider)',
+                windowHeader: ':alpha<0.85<@panel',
+                popup: ':lighten<3<@panel',
+                shadow: 'rgba(0, 0, 0, 0.1)',
+                header: ':alpha<0.7<@panel',
+                navBg: '@panel',
+                navFg: '@fg',
+                navActive: '@accent',
+                navIndicator: '@indicator',
+                pageHeaderBg: '@bg',
+                pageHeaderFg: '@fg',
+                link: '#0066a1',
+                hashtag: '#cc5b1a',
+                mention: '@accent',
+                mentionMe: '@mention',
+                renote: '#1e7a65',
+                modalBg: 'rgba(0, 0, 0, 0.3)',
+                scrollbarHandle: 'rgba(0, 0, 0, 0.2)',
+                scrollbarHandleHover: 'rgba(0, 0, 0, 0.4)',
+                dateLabelFg: '@fg',
+                infoBg: '#d9e6f2',
+                infoFg: '#111',
+                infoWarnBg: '#f7e0b0',
+                infoWarnFg: '#8a6e2b',
+                folderHeaderBg: 'rgba(0, 0, 0, 0.03)',
+                folderHeaderHoverBg: 'rgba(0, 0, 0, 0.07)',
+                buttonBg: ':lighten<5<@panel',
+                buttonHoverBg: ':lighten<10<@panel',
+                buttonGradateA: '@accent',
+                buttonGradateB: ':hue<20<@accent',
+                switchBg: 'rgba(0, 0, 0, 0.15)',
+                switchOffBg: 'rgba(0, 0, 0, 0.1)',
+                switchOffFg: ':alpha<0.8<@fg',
+                switchOnBg: '@accentedBg',
+                switchOnFg: '@accent',
+                inputBorder: 'rgba(0, 0, 0, 0.15)',
+                inputBorderHover: 'rgba(0, 0, 0, 0.25)',
+                badge: '#1f8a9c',
+                messageBg: '@bg',
+                success: '#2e7d32',
+                error: '#b71c1c',
+                warn: '#b76e1e',
+                codeString: '#b45f3a',
+                codeNumber: '#1f7a5a',
+                codeBoolean: '#7245b3',
+                deckBg: '#e0e0e0',
+                htmlThemeColor: '@bg',
+            };
+
+            // ---------- 中文注释 ----------
+            const CHINESE_DESC = {
+                accent: '强调色/品牌橙',
+                accentedBg: '强调色背景 (半透明)',
+                love: '喜欢/收藏色',
+                focus: '焦点指示 (半透明)',
+                bg: '页面背景色',
+                fg: '默认文字颜色',
+                fgHighlighted: '高亮文字',
+                fgOnAccent: '强调色上的文字',
+                fgOnWhite: '白色背景上的文字',
+                divider: '分割线颜色',
+                indicator: '未读/指示器颜色',
+                panel: '面板背景',
+                panelHighlight: '面板高亮',
+                panelHeaderBg: '面板头部背景',
+                panelHeaderFg: '面板头部文字',
+                panelBorder: '面板边框样式 (特殊)',
+                windowHeader: '窗口头部 (半透明)',
+                popup: '弹出层背景',
+                shadow: '阴影颜色',
+                header: '顶栏背景 (半透明)',
+                navBg: '导航背景',
+                navFg: '导航文字',
+                navActive: '导航激活项',
+                navIndicator: '导航指示器',
+                pageHeaderBg: '页面头部背景',
+                pageHeaderFg: '页面头部文字',
+                link: '链接颜色',
+                hashtag: '话题标签颜色',
+                mention: '提及颜色',
+                mentionMe: '提及自己颜色',
+                renote: '第二主题色/转贴颜色',
+                modalBg: '模态框遮罩',
+                scrollbarHandle: '滚动条滑块',
+                scrollbarHandleHover: '滚动条滑块悬停',
+                dateLabelFg: '日期标签文字',
+                infoBg: '信息提示背景',
+                infoFg: '信息提示文字',
+                infoWarnBg: '警告提示背景',
+                infoWarnFg: '警告提示文字',
+                folderHeaderBg: '文件夹头部背景',
+                folderHeaderHoverBg: '文件夹头部悬停',
+                buttonBg: '按钮背景',
+                buttonHoverBg: '按钮悬停背景',
+                buttonGradateA: '渐变按钮起点 (来自强调色)',
+                buttonGradateB: '渐变按钮终点 (可独立编辑)',
+                switchBg: '开关背景',
+                switchOffBg: '开关关闭背景',
+                switchOffFg: '开关关闭滑块',
+                switchOnBg: '开关开启背景',
+                switchOnFg: '开关开启滑块',
+                inputBorder: '输入框边框',
+                inputBorderHover: '输入框边框悬停',
+                badge: '徽章背景',
+                messageBg: '消息背景',
+                success: '成功色',
+                error: '错误色',
+                warn: '警告色',
+                codeString: '代码字符串颜色',
+                codeNumber: '代码数字颜色',
+                codeBoolean: '代码布尔值颜色',
+                deckBg: '多栏模式背景',
+                htmlThemeColor: '浏览器主题颜色',
+            };
+
+            // ---------- 工具函数 ----------
+            function parseColor(str) {
+                if (!str) return null;
+                str = str.trim();
+                if (str.startsWith('#')) {
+                    let hex = str.slice(1);
+                    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+                    if (hex.length === 6) {
+                        const r = parseInt(hex.slice(0, 2), 16) / 255;
+                        const g = parseInt(hex.slice(2, 4), 16) / 255;
+                        const b = parseInt(hex.slice(4, 6), 16) / 255;
+                        return { r, g, b, a: 1 };
+                    }
+                }
+                const rgbaMatch = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)/);
+                if (rgbaMatch) {
+                    const r = parseInt(rgbaMatch[1]) / 255;
+                    const g = parseInt(rgbaMatch[2]) / 255;
+                    const b = parseInt(rgbaMatch[3]) / 255;
+                    const a = rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1;
+                    return { r, g, b, a };
+                }
+                return null;
+            }
+
+            function rgbToHsl({ r, g, b, a }) {
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        case b: h = (r - g) / d + 4; break;
+                    }
+                    h /= 6;
+                }
+                return { h, s, l, a };
+            }
+
+            function hslToRgb({ h, s, l, a }) {
+                let r, g, b;
+                if (s === 0) {
+                    r = g = b = l;
+                } else {
+                    const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1/6) return p + (q - p) * 6 * t;
+                        if (t < 1/2) return q;
+                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    };
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1/3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1/3);
+                }
+                return { r, g, b, a };
+            }
+
+            function formatRgb({ r, g, b, a }) {
+                if (a >= 0.999) {
+                    return `#${[r, g, b].map(c => Math.round(c * 255).toString(16).padStart(2, '0')).join('')}`;
+                } else {
+                    return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a.toFixed(2)})`;
+                }
+            }
+
+            function toHex(colorStr) {
+                const c = parseColor(colorStr);
+                if (!c) return null;
+                return `#${[c.r, c.g, c.b].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('')}`;
+            }
+
+            function lighten(colorStr, amount) {
+                const c = parseColor(colorStr);
+                if (!c) return colorStr;
+                const hsl = rgbToHsl(c);
+                hsl.l = Math.min(1, hsl.l + (amount / 100));
+                return formatRgb(hslToRgb(hsl));
+            }
+            function alpha(colorStr, amount) {
+                const c = parseColor(colorStr);
+                if (!c) return colorStr;
+                c.a = Math.min(1, Math.max(0, amount));
+                return formatRgb(c);
+            }
+            function hue(colorStr, degrees) {
+                const c = parseColor(colorStr);
+                if (!c) return colorStr;
+                const hsl = rgbToHsl(c);
+                hsl.h = (hsl.h + (degrees / 360)) % 1;
+                if (hsl.h < 0) hsl.h += 1;
+                return formatRgb(hslToRgb(hsl));
+            }
+
+            // ---------- 解析引擎 ----------
+            function resolveValue(val, ctx, cache = new Map()) {
+                if (typeof val !== 'string') return val;
+                val = val.trim();
+                if (cache.has(val)) return cache.get(val);
+
+                if (val.startsWith('@')) {
+                    const key = val.slice(1);
+                    if (ctx[key] !== undefined) {
+                        const resolved = resolveValue(ctx[key], ctx, cache);
+                        cache.set(val, resolved);
+                        return resolved;
+                    }
+                    return val;
+                }
+
+                if (val.startsWith(':')) {
+                    const parts = val.slice(1).split('<');
+                    const func = parts[0];
+                    const args = parts.slice(1);
+                    let colorRef = args.pop();
+                    const baseColor = resolveValue(colorRef.startsWith('@') ? colorRef : `@${colorRef}`, ctx, cache);
+                    if (!baseColor) return val;
+
+                    let result = baseColor;
+                    if (func === 'alpha' && args.length > 0) {
+                        result = alpha(baseColor, parseFloat(args[0]));
+                    } else if (func === 'lighten' && args.length > 0) {
+                        result = lighten(baseColor, parseFloat(args[0]));
+                    } else if (func === 'hue' && args.length > 0) {
+                        result = hue(baseColor, parseFloat(args[0]));
+                    }
+                    cache.set(val, result);
+                    return result;
+                }
+
+                return val;
+            }
+
+            function evaluateTheme(theme) {
+                const evaluated = {};
+                const keys = Object.keys(theme);
+                for (let k of keys) evaluated[k] = theme[k];
+
+                let changed = true;
+                let maxLoop = 50;
+                while (changed && maxLoop-- > 0) {
+                    changed = false;
+                    for (let k of keys) {
+                        const oldVal = evaluated[k];
+                        const newVal = resolveValue(oldVal, evaluated);
+                        if (newVal !== oldVal) {
+                            evaluated[k] = newVal;
+                            changed = true;
+                        }
+                    }
+                }
+                return evaluated;
+            }
+
+            // ---------- 全局状态 ----------
+            let currentTheme = JSON.parse(JSON.stringify(DARK_THEME));
+            let currentMode = 'dark';
+
+            // 判断基础色是否可编辑
+            function isEditableBase(varName, rawValue) {
+                if (typeof rawValue !== 'string') return false;
+                // 特例：允许直接编辑渐变按钮终点
+                if (varName === 'buttonGradateB') return true;
+                if (rawValue.includes('@') || rawValue.includes(':')) return false;
+                return rawValue.startsWith('#') || rawValue.startsWith('rgb');
+            }
+
+            // 应用CSS变量（无渲染）
+            function applyCssVars(final) {
+                let cssVars = ':root {\n';
+                for (let [key, value] of Object.entries(final)) {
+                    if (typeof value === 'string' && (value.startsWith('#') || value.startsWith('rgb'))) {
+                        cssVars += `  --${key}: ${value};\n`;
+                    } else if (key === 'divider' || key.includes('Bg') || key.includes('Fg') || key.includes('color')) {
+                        cssVars += `  --${key}: ${value};\n`;
+                    }
+                }
+                cssVars += `  --MI_THEME-divider: ${final.divider};\n`;
+                cssVars += '}\n';
+
+                let styleEl = document.getElementById('dynamic-theme-vars');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'dynamic-theme-vars';
+                    document.head.appendChild(styleEl);
+                }
+                styleEl.innerHTML = cssVars;
+            }
+
+            // 增量更新
+            function incrementalUpdate(final) {
+                applyCssVars(final);
+                document.querySelectorAll('.color-item[data-var]').forEach(item => {
+                    const varName = item.dataset.var;
+                    const val = final[varName];
+                    if (!val) return;
+                    const swatch = item.querySelector('.color-swatch');
+                    const valueSpan = item.querySelector('.color-value');
+                    if (swatch) swatch.style.backgroundColor = val;
+                    if (valueSpan) valueSpan.textContent = val;
+                });
+            }
+
+            // 颜色选择器实时更新
+            window.updateVarInput = function(varName, newHex) {
+                if (!currentTheme.hasOwnProperty(varName)) return;
+                currentTheme[varName] = newHex;
+                const final = evaluateTheme(currentTheme);
+                incrementalUpdate(final);
+            };
+
+            // 切换深浅模式
+            window.switchMode = function(mode) {
+                if (mode === currentMode) return;
+                currentMode = mode;
+                currentTheme = JSON.parse(JSON.stringify(mode === 'dark' ? DARK_THEME : LIGHT_THEME));
+                fullRefresh();
+            };
+
+            function fullRefresh() {
+                const final = evaluateTheme(currentTheme);
+                applyCssVars(final);
+                renderLeftPanel(final);
+                updateToggleButtons();
+            }
+
+            function renderLeftPanel(final) {
+                const panel = document.querySelector('.variables-panel .color-grid');
+                if (!panel) return;
+
+                let html = '';
+                for (let key in final) {
+                    if (key === 'panelBorder') continue;
+                    const val = final[key];
+                    if (typeof val !== 'string' || (!val.startsWith('#') && !val.startsWith('rgb'))) continue;
+
+                    const desc = CHINESE_DESC[key] || '—';
+                    const hex = toHex(val);
+                    const isEditable = isEditableBase(key, currentTheme[key]);
+
+                    html += `<div class="color-item" data-var="${key}">`;
+                    html += `<div class="color-swatch" style="background: ${val};" title="点击复制颜色值" onclick="navigator.clipboard?.writeText('${val}')"></div>`;
+                    html += `<div class="color-info">`;
+                    html += `<span class="color-name">${key}</span>`;
+                    html += `<span class="color-desc">${desc}</span>`;
+                    html += `<div class="color-value">${val}</div>`;
+                    html += `</div>`;
+
+                    if (isEditable && hex) {
+                        html += `<input type="color" class="color-picker" value="${hex}" oninput="updateVarInput('${key}', this.value)">`;
+                    } else {
+                        html += `<span style="width:32px; text-align:center; opacity:0.4;">🔒</span>`;
+                    }
+                    html += `</div>`;
+                }
+                panel.innerHTML = html;
+            }
+
+            function updateToggleButtons() {
+                const darkBtn = document.getElementById('mode-dark');
+                const lightBtn = document.getElementById('mode-light');
+                if (darkBtn && lightBtn) {
+                    darkBtn.classList.toggle('active', currentMode === 'dark');
+                    lightBtn.classList.toggle('active', currentMode === 'light');
+                }
+            }
+
+            // ---------- 生成带指定格式的JSON (外层无引号键 + 单引号值 + props尾逗号) ----------
+            function generateExportJSON() {
+                const id = Math.random().toString(36).substring(2, 10); // 8位随机
+                const nameStr = `Misskey-Theme-Editor_${id}`;
+                const base = currentMode;
+
+                // props 部分使用标准 JSON 字符串（双引号、一个空格缩进）
+                const propsStr = JSON.stringify(currentTheme, null, 1);
+
+                // 手动构建外层对象，键无引号，值用单引号，props后面加逗号
+                const lines = [];
+                lines.push(`{`);
+                lines.push(` id: '${id}',`);
+                lines.push(` name: '${nameStr}',`);
+                lines.push(` author: '@He0xD4C0@hub.captraw.com',`);
+                lines.push(` base: '${base}',`);
+                lines.push(` props: ${propsStr},`); // 注意这里的尾逗号
+                lines.push(`}`);
+                return lines.join('\n');
+            }
+
+            // 显示导出代码
+            window.showExportCode = function() {
+                const pre = document.getElementById('exportCodeDisplay');
+                const code = generateExportJSON();
+                pre.textContent = code;
+                pre.style.display = 'block';
+            };
+
+            // 一键复制
+            window.copyExportCode = function() {
+                const code = generateExportJSON();
+                navigator.clipboard.writeText(code).then(() => {
+                    alert('✅ 配置已复制到剪贴板');
+                }).catch(() => {
+                    alert('❌ 复制失败，请手动选择复制');
+                });
+            };
+
+            // 构建UI
+            function buildUI() {
+                const app = document.getElementById('app');
+                const final = evaluateTheme(currentTheme);
+
+                const html = `
+                    <div class="page-header">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <h1>🍊 Misskey Theme Editor 主题编辑器</h1>
+                            <div class="theme-toggle">
+                                <button id="mode-dark" class="${currentMode === 'dark' ? 'active' : ''}" onclick="switchMode('dark')">🌙 深色</button>
+                                <button id="mode-light" class="${currentMode === 'light' ? 'active' : ''}" onclick="switchMode('light')">☀️ 浅色</button>
+                            </div>
+                        </div>
+                        <div class="chip">点击色块复制 | 基础色拖拽实时预览</div>
+                    </div>
+
+                    <div class="dashboard">
+                        <div class="variables-panel">
+                            <h2>🎨 主题变量 · 中文注释</h2>
+                            <div class="color-grid"></div>
+                        </div>
+
+                        <div class="ui-showcase">
+                            <div class="window-card">
+                                <div class="window-header"><span class="indicator"></span> 主页时间线 · Home <span class="badge" style="margin-left: auto;">✨ 新笔记</span></div>
+                                <div class="nav-row">
+                                    <span class="nav-item active">主页 <span class="indicator"></span></span>
+                                    <span class="nav-item">本地</span><span class="nav-item">社交</span><span class="nav-item">全局</span>
+                                </div>
+                                <div class="note">
+                                    <div class="note-header"><div class="note-avatar"></div><div><div class="note-name">琥珀 栞 <span class="note-username">@shiori@social.example</span></div></div></div>
+                                    <div class="note-content">刚刚调好了这个 <span class="hashtag">#Misskey主题</span>，accent是温暖的 <span class="mention">@橙子</span> 色 ✨<br>还加了点 <span style="color: var(--renote);">转贴强调</span> 和 <span style="color: var(--link);">链接颜色</span>。</div>
+                                    <div class="renote-indicator">🔁 你喜欢的人转发了</div>
+                                </div>
+                                <div class="button-group">
+                                    <button class="btn" disabled>普通按钮</button>
+                                    <button class="btn btn-primary" disabled>主渐变按钮</button>
+                                    <button class="btn btn-hover" disabled>悬停效果</button>
+                                </div>
+                                <div class="switch-group">
+                                    <span>开关关闭</span><div class="switch"></div><span>开关开启</span><div class="switch on"></div>
+                                </div>
+                                <input class="input-field" placeholder="输入框示例" value="type something..." disabled>
+                                <div class="info-box"><strong>ℹ️ 信息提示</strong> (infoBg/infoFg) 警告: <span style="color: var(--warn);">⚠️ warn</span> 错误: <span style="color: var(--error);">❌ error</span></div>
+                                <div class="divider-example"></div>
+                                <div class="scrollable-area"><p>滚动条颜色使用 scrollbarHandle / hover</p><p>panel 背景逐级变亮</p><p>folderHeaderBg 用于文件夹头部</p></div>
+                            </div>
+                            <div class="window-card" style="background-color: var(--deckBg);">
+                                <div class="window-header" style="background-color: var(--header);">代码块模拟 · 字符串/数字/布尔</div>
+                                <div style="font-family: monospace; background: var(--bg); padding: 1rem; border-radius: 14px;">
+                                    <span style="color: var(--codeString);">"hello world"</span><br>
+                                    <span style="color: var(--codeNumber);">42</span><br>
+                                    <span style="color: var(--codeBoolean);">true</span><br>
+                                    <span style="color: var(--link);">link</span> · <span style="color: var(--hashtag);">#hashtag</span>
+                                </div>
+                                <div style="margin-top: 1rem; background-color: var(--folderHeaderBg); padding: 0.5rem; border-radius: 30px; text-align: center;">
+                                    📁 folderHeaderBg
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="export-area">
+                        <div class="export-buttons">
+                            <button class="export-btn" onclick="showExportCode()">📤 显示配置</button>
+                            <button class="copy-btn" onclick="copyExportCode()">📋 一键复制</button>
+                        </div>
+                        <pre id="exportCodeDisplay" class="export-code" style="display: none;"></pre>
+                    </div>
+                `;
+                app.innerHTML = html;
+
+                renderLeftPanel(final);
+                applyCssVars(final);
+                updateToggleButtons();
+            }
+
+            buildUI();
+        })();
+    </script>
+</body>
+</html>
