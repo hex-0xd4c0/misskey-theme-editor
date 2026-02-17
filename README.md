@@ -14,19 +14,21 @@
 ## 📦 使用方法
 
 ### 1. 本地运行
-克隆本仓库：
+**Linux系统** 克隆本仓库：
 ```bash
 git clone https://github.com/your-username/misskey-theme-editor.git
 ```
+**Windows系统** 浏览器下载misskey-theme-editor.html
+
 然后用浏览器打开 `misskey-theme-editor.html` 即可。
 
-或者直接下载
+**若页面显示异常请换用更新的浏览器**
 
 ### 2. 自定义主题
 - 左侧面板列出了所有 Misskey 主题变量，带有中文注释。
 - **基础颜色**（如 `accent`, `bg`, `fg`）右侧带有颜色选择器，可随意调整。
 - **派生颜色**（如 `panel`, `buttonBg`）会自动跟随基础色变化，不可直接编辑。
-- 点击右上角“深色/浅色”按钮可切换整体风格。
+- 点击上方“深色/浅色”按钮可切换整体风格。
 - 调整完成后，点击底部“📤 导出当前配置”即可复制生成的配置代码。
 
 ## 🧠 主题配置说明
