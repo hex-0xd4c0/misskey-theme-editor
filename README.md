@@ -22,9 +22,12 @@ git clone https://github.com/your-username/misskey-theme-editor.git
 
 然后用浏览器打开 `misskey-theme-editor.html` 即可。
 
+### 2. 在线DEMO
+**本站DEMO：** https://mktheme-editor.captraw.com
+
 **若页面显示异常请换用更新的浏览器**
 
-### 2. 自定义主题
+## 🔧 主要功能
 - 左侧面板列出了所有 Misskey 主题变量，带有中文注释。
 - **基础颜色**（如 `accent`, `bg`, `fg`）右侧带有颜色选择器，可随意调整。
 - **派生颜色**（如 `panel`, `buttonBg`）会自动跟随基础色变化，不可直接编辑。
